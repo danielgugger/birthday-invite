@@ -555,6 +555,40 @@
     pointer-events: none;
     z-index: 999;
   }
+
+  @media (max-width: 760px) {
+    body {
+      padding: 0;
+      align-items: flex-start;
+      overflow-x: hidden;
+    }
+
+    .window {
+      width: 720px;
+      transform-origin: top left;
+      transform: scale(calc(100vw / 720));
+    }
+
+    .window.visible {
+      transform: scale(calc(100vw / 720));
+      opacity: 1;
+    }
+
+    /* Wrapper needed so page height matches scaled card */
+    body::after {
+      content: '';
+      display: block;
+    }
+
+    #boot-screen {
+      padding: 16px;
+    }
+
+    .boot-terminal {
+      width: 100%;
+      font-size: 11px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -922,7 +956,22 @@ function revealTerminalLines() {
 /* =============================================
    START
 ============================================= */
-window.addEventListener('load', runBoot);
+function fixMobileHeight() {
+  if (window.innerWidth <= 760) {
+    const scale = window.innerWidth / 720;
+    const win = document.getElementById('main-window');
+    // After scaling, the element still occupies 720px height in layout
+    // We need to set the body height so there's no extra scroll
+    win.style.marginBottom = `-${(1 - scale) * win.offsetHeight}px`;
+  }
+}
+
+window.addEventListener('load', () => {
+  runBoot();
+  // Fix height after card is visible
+  setTimeout(fixMobileHeight, 3200);
+});
+window.addEventListener('resize', fixMobileHeight);
 </script>
 
 </body>
