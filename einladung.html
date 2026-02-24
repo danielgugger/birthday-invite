@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Einladung – birthday.exe</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d1117;
+    --bg2:       #161b22;
+    --bg3:       #1c2128;
+    --border:    #30363d;
+    --green:     #3fb950;
+    --green-dim: #238636;
+    --blue:      #58a6ff;
+    --purple:    #bc8cff;
+    --orange:    #ff8c42;
+    --yellow:    #e3b341;
+    --red:       #f85149;
+    --comment:   #8b949e;
+    --text:      #e6edf3;
+    --text-dim:  #adbac7;
+    --string:    #a5d6ff;
+    --keyword:   #ff7b72;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #010409;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(63,185,80,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(88,166,255,0.04) 0%, transparent 50%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .window {
+    width: 720px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,0.04),
+      0 32px 80px rgba(0,0,0,0.8),
+      0 0 60px rgba(63,185,80,0.03);
+    animation: bootUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes bootUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ---- TITLE BAR (like macOS/IDE) ---- */
+  .titlebar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    user-select: none;
+  }
+
+  .dots { display: flex; gap: 7px; }
+  .dot {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+  }
+  .dot-red    { background: #ff5f57; }
+  .dot-yellow { background: #febc2e; }
+  .dot-green  { background: #28c840; }
+
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .tab {
+    padding: 4px 14px;
+    border-radius: 5px 5px 0 0;
+    font-size: 12px;
+    color: var(--comment);
+    cursor: default;
+    border: 1px solid transparent;
+    border-bottom: none;
+    position: relative;
+    bottom: -1px;
+  }
+
+  .tab.active {
+    background: var(--bg);
+    color: var(--text);
+    border-color: var(--border);
+  }
+
+  .tab .lang-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  /* ---- TOP: FILE HEADER like a real source file ---- */
+  .file-header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .file-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(255,255,255,0.015) 28px,
+      rgba(255,255,255,0.015) 29px
+    );
+    pointer-events: none;
+  }
+
+  /* Line numbers column */
+  .code-block {
+    display: flex;
+    gap: 0;
+    font-size: 13px;
+    line-height: 1.9;
+    position: relative;
+  }
+
+  .ln {
+    color: var(--border);
+    text-align: right;
+    padding-right: 20px;
+    min-width: 36px;
+    user-select: none;
+    flex-shrink: 0;
+    font-size: 12px;
+    border-right: 1px solid var(--border);
+    margin-right: 20px;
+  }
+
+  .code {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .line { white-space: nowrap; }
+
+  /* Syntax colors */
+  .cm   { color: var(--comment);  font-style: italic; }
+  .kw   { color: var(--keyword);  }
+  .fn   { color: var(--blue);     }
+  .str  { color: var(--string);   }
+  .num  { color: var(--orange);   }
+  .var  { color: var(--text);     }
+  .op   { color: var(--comment);  }
+  .cls  { color: var(--yellow);   }
+  .bool { color: var(--purple);   }
+  .hl   { color: var(--green);    font-weight: 600; }
+  .dim  { color: var(--text-dim); }
+
+  /* The big title line */
+  .big-title {
+    font-family: 'Fira Code', monospace;
+    font-size: 42px;
+    font-weight: 600;
+    color: var(--green);
+    line-height: 1;
+    margin: 18px 0 6px 56px;
+    letter-spacing: -1px;
+    text-shadow: 0 0 40px rgba(63,185,80,0.3);
+  }
+
+  .big-title .dim-title { color: var(--comment); font-weight: 300; }
+
+  /* ---- STATUS BAR (VS Code style) ---- */
+  .statusbar {
+    background: var(--green-dim);
+    padding: 3px 12px;
+    display: flex;
+    gap: 20px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.85);
+    align-items: center;
+  }
+
+  .statusbar span { display: flex; align-items: center; gap: 4px; }
+
+  /* ---- MAIN CONTENT AREA: two panels ---- */
+  .main-panels {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* LEFT: narrow sidebar like VS Code explorer */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 0;
+  }
+
+  .sidebar-section {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-title {
+    padding: 8px 14px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--comment);
+    font-weight: 600;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .sidebar-item:last-child { border-bottom: none; }
+
+  .sidebar-item .icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+  .sidebar-item .key  { color: var(--comment); font-size: 10px; display: block; margin-bottom: 2px; letter-spacing: 1px; text-transform: uppercase; }
+  .sidebar-item .val  { color: var(--text); font-size: 13px; font-weight: 400; }
+  .sidebar-item .note { color: var(--comment); font-size: 10px; font-style: italic; }
+
+  /* RIGHT: main editor area */
+  .editor {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Editor sections look like code regions */
+  .editor-region {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    position: relative;
+  }
+
+  .region-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--comment);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .region-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Images as "terminal screenshots" */
+  .screenshot-frame {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .screenshot-bar {
+    background: var(--bg3);
+    padding: 6px 12px;
+    font-size: 10px;
+    color: var(--comment);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .screenshot-bar .sdot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .screenshot-scene {
+    width: 100%;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ship-scene {
+    background: linear-gradient(180deg, #0d2030 0%, #1a4060 40%, #0a2840 100%);
+  }
+
+  .food-scene {
+    background: radial-gradient(ellipse at 50% 60%, #3a2008 0%, #1a0e04 100%);
+  }
+
+  .screenshot-scene img {
+    max-width: 85%;
+    max-height: 85%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 20px rgba(0,0,0,0.6));
+  }
+
+  /* Output / terminal text */
+  .output-line {
+    font-size: 13px;
+    line-height: 2;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .prompt { color: var(--green); flex-shrink: 0; }
+  .output-text { color: var(--text-dim); }
+  .output-text strong { color: var(--text); font-weight: 500; }
+  .output-text .tag-green { color: var(--green); font-style: italic; }
+  .output-text .tag-red   { color: var(--red); }
+  .output-text .tag-blue  { color: var(--blue); }
+  .output-text .tag-yellow { color: var(--yellow); }
+
+  /* Issue / bug report block */
+  .issue-block {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--yellow);
+    border-radius: 0 4px 4px 0;
+    padding: 14px 16px;
+    margin-top: 8px;
+  }
+
+  .issue-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .badge-label {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .badge-wish  { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+  .badge-warn  { background: rgba(248,81,73,0.1);  color: var(--red); border: 1px solid rgba(248,81,73,0.25); }
+
+  .issue-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  .issue-body strong { color: var(--text); }
+  .issue-body em { color: var(--yellow); font-style: normal; }
+
+  /* ---- BOTTOM: terminal output + QR ---- */
+  .terminal-footer {
+    background: #010409;
+    border-top: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .terminal-panel {
+    flex: 1;
+  }
+
+  .terminal-header {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--comment);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+  }
+
+  .terminal-header span.active { color: var(--text); }
+
+  .t-line {
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--text-dim);
+    display: block;
+  }
+
+  .t-line .p { color: var(--green); margin-right: 6px; }
+  .t-line .success { color: var(--green); }
+  .t-line .warn    { color: var(--yellow); }
+  .t-line .info    { color: var(--blue); }
+  .t-line .strong  { color: var(--text); font-weight: 500; }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--green);
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  .qr-panel {
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .qr-terminal {
+    background: white;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    display: inline-block;
+    box-shadow: 0 0 20px rgba(63,185,80,0.1);
+  }
+
+  .qr-terminal img {
+    width: 148px;
+    height: 148px;
+    display: block;
+    object-fit: contain;
+  }
+
+  .qr-caption {
+    font-size: 10px;
+    color: var(--comment);
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+</style>
+</head>
+<body>
+
+<div class="window">
+
+  <!-- IDE Title Bar -->
+  <div class="titlebar">
+    <div class="dots">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab active">
+        <span class="lang-dot" style="background:#3fb950"></span>birthday_party.rs
+      </div>
+      <div class="tab">
+        <span class="lang-dot" style="background:#58a6ff"></span>wishlist.md
+      </div>
+      <div class="tab">
+        <span class="lang-dot" style="background:#ff8c42"></span>README
+      </div>
+    </div>
+  </div>
+
+  <!-- File header as source code -->
+  <div class="file-header">
+    <div class="code-block">
+      <div class="ln">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8</div>
+      <div class="code">
+        <div class="line"><span class="cm">// ============================================================</span></div>
+        <div class="line"><span class="cm">// birthday_party.rs  —  v33.0.0  —  stable release</span></div>
+        <div class="line"><span class="cm">// author: Dani  |  license: MIT (Man ist Tätig)</span></div>
+        <div class="line"><span class="cm">// ============================================================</span></div>
+        <div class="line">&nbsp;</div>
+        <div class="line"><span class="kw">use</span> <span class="cls">Waldhaus</span><span class="op">::</span><span class="fn">Reitnau</span><span class="op">;</span></div>
+        <div class="line"><span class="kw">use</span> <span class="cls">Food</span><span class="op">::{</span><span class="fn">Speis, Trank, MehrTrank</span><span class="op">};</span></div>
+        <div class="line"><span class="kw">use</span> <span class="cls">Guests</span><span class="op">::*;  </span><span class="cm">// alle willkommen</span></div>
+      </div>
+    </div>
+
+    <div class="big-title">
+      <span class="dim-title">fn </span>geburtstagsfest<span class="dim-title">() // Dani wird 33 🎉</span>
+    </div>
+
+    <div class="code-block" style="margin-top:12px">
+      <div class="ln">10<br>11<br>12<br>13<br>14</div>
+      <div class="code">
+        <div class="line"><span class="op">{</span></div>
+        <div class="line">&nbsp;&nbsp;<span class="kw">let</span> <span class="var">datum</span>  <span class="op">=</span> <span class="str">"Samstag, 28. März"</span><span class="op">;</span></div>
+        <div class="line">&nbsp;&nbsp;<span class="kw">let</span> <span class="var">beginn</span> <span class="op">=</span> <span class="str">"15:00 Uhr"</span><span class="op">;</span>  <span class="cm">// wer früher kommt, baut auf</span></div>
+        <div class="line">&nbsp;&nbsp;<span class="kw">let</span> <span class="var">ort</span>    <span class="op">=</span> <span class="cls">Waldhaus</span><span class="op">::</span><span class="fn">Reitnau</span><span class="op">::</span><span class="fn">new</span><span class="op">(</span><span class="str">"5057 Reitnau"</span><span class="op">);</span></div>
+        <div class="line">&nbsp;&nbsp;<span class="kw">let</span> <span class="var">kinder_willkommen</span> <span class="op">=</span> <span class="bool">true</span><span class="op">;</span>  <span class="cm">// partner auch!</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="statusbar">
+    <span>⎇ main</span>
+    <span>✓ birthday_party.rs</span>
+    <span>Rust</span>
+    <span>UTF-8</span>
+    <span style="margin-left:auto">Dani · v33.0.0 · stable · 0 errors · 0 warnings</span>
+  </div>
+
+  <!-- Main two-panel area -->
+  <div class="main-panels">
+
+    <!-- Sidebar: event details -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Explorer</div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">📅 Event</div>
+        <div class="sidebar-item">
+          <span class="icon">📅</span>
+          <div>
+            <span class="key">datum</span>
+            <span class="val">28. März</span>
+            <span class="note">// Samstag</span>
+          </div>
+        </div>
+        <div class="sidebar-item">
+          <span class="icon">🕒</span>
+          <div>
+            <span class="key">start_time</span>
+            <span class="val">15:00 Uhr</span>
+            <span class="note">// end_time = undefined</span>
+          </div>
+        </div>
+        <div class="sidebar-item">
+          <span class="icon">📍</span>
+          <div>
+            <span class="key">location</span>
+            <span class="val">Waldhaus Reitnau</span>
+            <span class="note">// 5057 Reitnau</span>
+          </div>
+        </div>
+        <div class="sidebar-item">
+          <span class="icon">👨‍👩‍👧</span>
+          <div>
+            <span class="key">guests</span>
+            <span class="val">Du, Anhang</span>
+            <span class="val">& Nachkommen</span>
+            <span class="note">// partner++ && kinder[]</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">⚙️ Dress Code</div>
+        <div class="sidebar-item">
+          <span class="icon">👕</span>
+          <div>
+            <span class="key">required</span>
+            <span class="val">casual</span>
+            <span class="note">// kein Smoking</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-title">📋 Changelog</div>
+        <div class="sidebar-item">
+          <span class="icon">🆕</span>
+          <div>
+            <span class="key">v33.0.0</span>
+            <span class="val">Major release</span>
+            <span class="note">// breaking: +1 Lebensjahr</span>
+          </div>
+        </div>
+        <div class="sidebar-item">
+          <span class="icon">✅</span>
+          <div>
+            <span class="key">fixed</span>
+            <span class="val">Whisky-Regal</span>
+            <span class="note">// deprecated: Platz</span>
+          </div>
+        </div>
+        <div class="sidebar-item">
+          <span class="icon">⭐</span>
+          <div>
+            <span class="key">added</span>
+            <span class="val">Piratenschiff</span>
+            <span class="note">// see wishlist.md</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Editor: main content -->
+    <div class="editor">
+
+      <!-- Food section -->
+      <div class="editor-region">
+        <div class="region-label">verpflegung.init()</div>
+
+        <div class="screenshot-frame">
+          <div class="screenshot-bar">
+            <div class="sdot" style="background:#ff5f57"></div>
+            <div class="sdot" style="background:#febc2e"></div>
+            <div class="sdot" style="background:#28c840"></div>
+            <span style="margin-left:4px">food_preview.png — 1920×1080</span>
+          </div>
+          <div class="screenshot-scene food-scene">
+            <img src="images/BB.png" alt="Essen & Trinken">
+          </div>
+        </div>
+
+        <div class="output-line">
+          <span class="prompt">›</span>
+          <span class="output-text">catering.serve(<span class="tag-green">"speis"</span>, <span class="tag-green">"trank"</span>, <span class="tag-green">"alkohol"</span>)  <span style="color:var(--comment)">// ✓ ready</span></span>
+        </div>
+        <div class="output-line">
+          <span class="prompt">›</span>
+          <span class="output-text"><span style="color:var(--comment)">// Warnung: </span><span class="tag-yellow">Wer nüchtern bleibt, ist selbst schuld.</span></span>
+        </div>
+      </div>
+
+      <!-- Wishlist as issue tracker -->
+      <div class="editor-region">
+        <div class="region-label">wishlist.md — issues</div>
+
+        <div class="screenshot-frame">
+          <div class="screenshot-bar">
+            <div class="sdot" style="background:#ff5f57"></div>
+            <div class="sdot" style="background:#febc2e"></div>
+            <div class="sdot" style="background:#28c840"></div>
+            <span style="margin-left:4px">q_annes_revenge_preview.png — Das will ich! ⚓</span>
+          </div>
+          <div class="screenshot-scene ship-scene">
+            <img src="images/Q-A-R.png" alt="Queen Anne's Revenge">
+          </div>
+        </div>
+
+        <div class="issue-block">
+          <div class="issue-title">
+            <span>#1</span>
+            <span class="badge-label badge-wish">Geschenkwunsch</span>
+            <span class="badge-label badge-warn">kein Alkohol bitte!</span>
+          </div>
+          <div class="issue-body" style="font-size:13px; line-height:2">
+            Mein Whisky-Fass-Regal ist bereits randvoll — bitte <strong>keinen Alkohol</strong> mehr schenken! 🥃<br>
+            Ich freue mich sehr über einen <strong>Beitrag zum BlueBrixx-Set «Queen Anne's Revenge»</strong> —
+            das ist ein riesiges Piratenschiff aus Klemmbausteinen, das ich mir schon lange wünsche. ⚓<br>
+            <em>Alternativ: Ein Beitrag an die Unkosten des Abends ist ebenfalls herzlich willkommen und sehr geschätzt! 🙏</em>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Terminal footer -->
+  <div class="terminal-footer">
+    <div class="terminal-panel">
+      <div class="terminal-header">
+        <span class="active">TERMINAL</span>
+        <span>OUTPUT</span>
+        <span>DEBUG</span>
+      </div>
+      <span class="t-line"><span class="p">$</span> cargo run --release birthday_party</span>
+      <span class="t-line"><span class="p"> </span><span class="info">Compiling</span> <span class="strong">happiness</span> v33.0.0 <span style="color:var(--comment)">// hosted by Dani</span></span>
+      <span class="t-line"><span class="p"> </span><span class="warn">⚠ WARNING</span> <span style="color:var(--text-dim)">children_mode=<span class="warn">true</span> — noise_level überschreitet INT_MAX. Ohropax optional.</span></span>
+      <span class="t-line"><span class="p"> </span><span class="success">✓ Finished</span> — <span class="strong">Ich freu mich riesig auf euch!</span></span>
+      <span class="t-line"><span class="p"> </span><span class="warn">⚠</span> <span class="strong">Bis zum 28. März!</span> Kein Smoking nötig. 🥂<span class="cursor"></span></span>
+    </div>
+
+    <div class="qr-panel">
+      <div class="qr-terminal">
+        <img src="images/QR.png" alt="QR Code Google Maps">
+      </div>
+      <div class="qr-caption">$ open maps://waldhaus-reitnau</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
