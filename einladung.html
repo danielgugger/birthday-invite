@@ -29,36 +29,105 @@
 
   body {
     background: #010409;
-    background-image:
-      radial-gradient(ellipse at 20% 10%, rgba(63,185,80,0.04) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 90%, rgba(88,166,255,0.04) 0%, transparent 50%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 40px 20px;
     font-family: 'JetBrains Mono', monospace;
+    width: fit-content;
+    min-width: 100vw;
+    position: relative;
+    overflow-x: hidden;
   }
 
+  /* =============================================
+     MATRIX RAIN CANVAS
+  ============================================= */
+  #matrix-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 2s ease;
+  }
+
+  #matrix-canvas.visible { opacity: 1; }
+
+  /* =============================================
+     BOOT SCREEN (shown before card)
+  ============================================= */
+  #boot-screen {
+    position: fixed;
+    inset: 0;
+    background: #010409;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    transition: opacity 0.6s ease;
+  }
+
+  #boot-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .boot-terminal {
+    width: 600px;
+    font-size: 13px;
+    line-height: 2;
+  }
+
+  .boot-line {
+    display: block;
+    color: var(--green);
+    opacity: 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .boot-line.dim    { color: var(--comment); }
+  .boot-line.blue   { color: var(--blue); }
+  .boot-line.yellow { color: var(--yellow); }
+  .boot-line.white  { color: var(--text); }
+
+  /* =============================================
+     MAIN WINDOW
+  ============================================= */
   .window {
     width: 720px;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 0;
     overflow: hidden;
+    position: relative;
+    z-index: 1;
     box-shadow:
       0 0 0 1px rgba(255,255,255,0.04),
       0 32px 80px rgba(0,0,0,0.8),
-      0 0 60px rgba(63,185,80,0.03);
-    animation: bootUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      0 0 80px rgba(63,185,80,0.06);
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s ease, box-shadow 0.4s ease;
   }
 
-  @keyframes bootUp {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+  .window.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
-  /* ---- TITLE BAR (like macOS/IDE) ---- */
+  .window:hover {
+    box-shadow:
+      0 0 0 1px rgba(63,185,80,0.15),
+      0 32px 80px rgba(0,0,0,0.8),
+      0 0 100px rgba(63,185,80,0.1);
+  }
+
+  /* ---- TITLE BAR ---- */
   .titlebar {
     background: var(--bg2);
     border-bottom: 1px solid var(--border);
@@ -70,19 +139,13 @@
   }
 
   .dots { display: flex; gap: 7px; }
-  .dot {
-    width: 13px; height: 13px;
-    border-radius: 50%;
-  }
+  .dot { width: 13px; height: 13px; border-radius: 50%; transition: filter 0.2s; }
+  .dot:hover { filter: brightness(1.3); }
   .dot-red    { background: #ff5f57; }
   .dot-yellow { background: #febc2e; }
   .dot-green  { background: #28c840; }
 
-  .tab-bar {
-    display: flex;
-    gap: 2px;
-    flex: 1;
-  }
+  .tab-bar { display: flex; gap: 2px; flex: 1; }
 
   .tab {
     padding: 4px 14px;
@@ -94,13 +157,11 @@
     border-bottom: none;
     position: relative;
     bottom: -1px;
+    transition: color 0.2s;
   }
 
-  .tab.active {
-    background: var(--bg);
-    color: var(--text);
-    border-color: var(--border);
-  }
+  .tab.active { background: var(--bg); color: var(--text); border-color: var(--border); }
+  .tab:not(.active):hover { color: var(--text-dim); }
 
   .tab .lang-dot {
     display: inline-block;
@@ -110,7 +171,7 @@
     vertical-align: middle;
   }
 
-  /* ---- TOP: FILE HEADER like a real source file ---- */
+  /* ---- FILE HEADER ---- */
   .file-header {
     background: var(--bg2);
     border-bottom: 1px solid var(--border);
@@ -124,19 +185,15 @@
     position: absolute;
     inset: 0;
     background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 28px,
+      0deg, transparent, transparent 28px,
       rgba(255,255,255,0.015) 28px,
       rgba(255,255,255,0.015) 29px
     );
     pointer-events: none;
   }
 
-  /* Line numbers column */
   .code-block {
     display: flex;
-    gap: 0;
     font-size: 13px;
     line-height: 1.9;
     position: relative;
@@ -154,27 +211,22 @@
     margin-right: 20px;
   }
 
-  .code {
-    flex: 1;
-    overflow: hidden;
-  }
-
+  .code { flex: 1; overflow: hidden; }
   .line { white-space: nowrap; }
 
-  /* Syntax colors */
-  .cm   { color: var(--comment);  font-style: italic; }
-  .kw   { color: var(--keyword);  }
-  .fn   { color: var(--blue);     }
-  .str  { color: var(--string);   }
-  .num  { color: var(--orange);   }
-  .var  { color: var(--text);     }
-  .op   { color: var(--comment);  }
-  .cls  { color: var(--yellow);   }
-  .bool { color: var(--purple);   }
-  .hl   { color: var(--green);    font-weight: 600; }
+  /* Syntax */
+  .cm   { color: var(--comment); font-style: italic; }
+  .kw   { color: var(--keyword); }
+  .fn   { color: var(--blue); }
+  .str  { color: var(--string); }
+  .num  { color: var(--orange); }
+  .var  { color: var(--text); }
+  .op   { color: var(--comment); }
+  .cls  { color: var(--yellow); }
+  .bool { color: var(--purple); }
   .dim  { color: var(--text-dim); }
 
-  /* The big title line */
+  /* Big title with typing cursor */
   .big-title {
     font-family: 'Fira Code', monospace;
     font-size: 42px;
@@ -183,12 +235,27 @@
     line-height: 1;
     margin: 18px 0 6px 56px;
     letter-spacing: -1px;
-    text-shadow: 0 0 40px rgba(63,185,80,0.3);
+    text-shadow: 0 0 40px rgba(63,185,80,0.35);
+    position: relative;
   }
 
   .big-title .dim-title { color: var(--comment); font-weight: 300; }
 
-  /* ---- STATUS BAR (VS Code style) ---- */
+  /* Typing effect: title starts empty, fills in via JS */
+  #typed-title { position: relative; }
+
+  #typed-title::after {
+    content: '▋';
+    color: var(--green);
+    animation: blink 0.8s step-end infinite;
+    font-size: 36px;
+    vertical-align: middle;
+    margin-left: 2px;
+  }
+
+  #typed-title.done::after { display: none; }
+
+  /* ---- STATUS BAR ---- */
   .statusbar {
     background: var(--green-dim);
     padding: 3px 12px;
@@ -201,24 +268,21 @@
 
   .statusbar span { display: flex; align-items: center; gap: 4px; }
 
-  /* ---- MAIN CONTENT AREA: two panels ---- */
+  /* ---- MAIN PANELS ---- */
   .main-panels {
     display: flex;
     border-bottom: 1px solid var(--border);
   }
 
-  /* LEFT: narrow sidebar like VS Code explorer */
+  /* SIDEBAR */
   .sidebar {
     width: 220px;
     flex-shrink: 0;
     background: var(--bg2);
     border-right: 1px solid var(--border);
-    padding: 0;
   }
 
-  .sidebar-section {
-    border-bottom: 1px solid var(--border);
-  }
+  .sidebar-section { border-bottom: 1px solid var(--border); }
 
   .sidebar-title {
     padding: 8px 14px;
@@ -238,28 +302,33 @@
     color: var(--text-dim);
     line-height: 1.5;
     border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s, padding-left 0.15s;
+    cursor: default;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.4s ease, transform 0.4s ease, background 0.15s, padding-left 0.15s;
   }
 
+  .sidebar-item.revealed { opacity: 1; transform: translateX(0); }
+  .sidebar-item:hover { background: rgba(255,255,255,0.04); padding-left: 18px; }
   .sidebar-item:last-child { border-bottom: none; }
+  .sidebar-item .icon  { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+  .sidebar-item .key   { color: var(--comment); font-size: 10px; display: block; margin-bottom: 2px; letter-spacing: 1px; text-transform: uppercase; }
+  .sidebar-item .val   { color: var(--text); font-size: 13px; font-weight: 400; }
+  .sidebar-item .note  { color: var(--comment); font-size: 10px; font-style: italic; }
 
-  .sidebar-item .icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
-  .sidebar-item .key  { color: var(--comment); font-size: 10px; display: block; margin-bottom: 2px; letter-spacing: 1px; text-transform: uppercase; }
-  .sidebar-item .val  { color: var(--text); font-size: 13px; font-weight: 400; }
-  .sidebar-item .note { color: var(--comment); font-size: 10px; font-style: italic; }
+  /* EDITOR */
+  .editor { flex: 1; overflow: hidden; }
 
-  /* RIGHT: main editor area */
-  .editor {
-    flex: 1;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  /* Editor sections look like code regions */
   .editor-region {
     border-bottom: 1px solid var(--border);
     padding: 18px 24px;
-    position: relative;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
   }
+
+  .editor-region.revealed { opacity: 1; transform: translateY(0); }
 
   .region-label {
     font-size: 9px;
@@ -279,12 +348,17 @@
     background: var(--border);
   }
 
-  /* Images as "terminal screenshots" */
   .screenshot-frame {
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
     margin-bottom: 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .screenshot-frame:hover {
+    border-color: rgba(63,185,80,0.4);
+    box-shadow: 0 0 20px rgba(63,185,80,0.08);
   }
 
   .screenshot-bar {
@@ -308,22 +382,22 @@
     justify-content: center;
   }
 
-  .ship-scene {
-    background: linear-gradient(180deg, #0d2030 0%, #1a4060 40%, #0a2840 100%);
-  }
-
-  .food-scene {
-    background: radial-gradient(ellipse at 50% 60%, #3a2008 0%, #1a0e04 100%);
-  }
+  .ship-scene  { background: linear-gradient(180deg, #0d2030 0%, #1a4060 40%, #0a2840 100%); }
+  .food-scene  { background: radial-gradient(ellipse at 50% 60%, #3a2008 0%, #1a0e04 100%); }
 
   .screenshot-scene img {
     max-width: 85%;
     max-height: 85%;
     object-fit: contain;
     filter: drop-shadow(0 6px 20px rgba(0,0,0,0.6));
+    transition: transform 0.3s ease, filter 0.3s ease;
   }
 
-  /* Output / terminal text */
+  .screenshot-frame:hover .screenshot-scene img {
+    transform: scale(1.04);
+    filter: drop-shadow(0 8px 28px rgba(0,0,0,0.7));
+  }
+
   .output-line {
     font-size: 13px;
     line-height: 2;
@@ -335,12 +409,11 @@
   .prompt { color: var(--green); flex-shrink: 0; }
   .output-text { color: var(--text-dim); }
   .output-text strong { color: var(--text); font-weight: 500; }
-  .output-text .tag-green { color: var(--green); font-style: italic; }
-  .output-text .tag-red   { color: var(--red); }
-  .output-text .tag-blue  { color: var(--blue); }
-  .output-text .tag-yellow { color: var(--yellow); }
+  .tag-green  { color: var(--green); }
+  .tag-yellow { color: var(--yellow); }
+  .tag-red    { color: var(--red); }
+  .tag-blue   { color: var(--blue); }
 
-  /* Issue / bug report block */
   .issue-block {
     background: var(--bg3);
     border: 1px solid var(--border);
@@ -348,7 +421,10 @@
     border-radius: 0 4px 4px 0;
     padding: 14px 16px;
     margin-top: 8px;
+    transition: border-left-color 0.2s;
   }
+
+  .issue-block:hover { border-left-color: var(--green); }
 
   .issue-title {
     display: flex;
@@ -367,19 +443,14 @@
     font-weight: 500;
   }
 
-  .badge-wish  { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
-  .badge-warn  { background: rgba(248,81,73,0.1);  color: var(--red); border: 1px solid rgba(248,81,73,0.25); }
+  .badge-wish { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+  .badge-warn { background: rgba(248,81,73,0.1); color: var(--red); border: 1px solid rgba(248,81,73,0.25); }
 
-  .issue-body {
-    font-size: 12px;
-    color: var(--text-dim);
-    line-height: 1.8;
-  }
-
+  .issue-body { font-size: 12px; color: var(--text-dim); line-height: 1.8; }
   .issue-body strong { color: var(--text); }
   .issue-body em { color: var(--yellow); font-style: normal; }
 
-  /* ---- BOTTOM: terminal output + QR ---- */
+  /* ---- TERMINAL FOOTER ---- */
   .terminal-footer {
     background: #010409;
     border-top: 1px solid var(--border);
@@ -387,11 +458,14 @@
     display: flex;
     gap: 24px;
     align-items: center;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
   }
 
-  .terminal-panel {
-    flex: 1;
-  }
+  .terminal-footer.revealed { opacity: 1; transform: translateY(0); }
+
+  .terminal-panel { flex: 1; }
 
   .terminal-header {
     font-size: 10px;
@@ -412,9 +486,12 @@
     line-height: 1.9;
     color: var(--text-dim);
     display: block;
+    opacity: 0;
+    transition: opacity 0.3s ease;
   }
 
-  .t-line .p { color: var(--green); margin-right: 6px; }
+  .t-line.revealed { opacity: 1; }
+  .t-line .p       { color: var(--green); margin-right: 6px; }
   .t-line .success { color: var(--green); }
   .t-line .warn    { color: var(--yellow); }
   .t-line .info    { color: var(--blue); }
@@ -422,8 +499,7 @@
 
   .cursor {
     display: inline-block;
-    width: 8px;
-    height: 14px;
+    width: 8px; height: 14px;
     background: var(--green);
     vertical-align: middle;
     animation: blink 1s step-end infinite;
@@ -435,10 +511,7 @@
     50%       { opacity: 0; }
   }
 
-  .qr-panel {
-    flex-shrink: 0;
-    text-align: center;
-  }
+  .qr-panel { flex-shrink: 0; text-align: center; }
 
   .qr-terminal {
     background: white;
@@ -447,11 +520,16 @@
     border: 1px solid var(--border);
     display: inline-block;
     box-shadow: 0 0 20px rgba(63,185,80,0.1);
+    transition: box-shadow 0.3s, transform 0.3s;
+  }
+
+  .qr-terminal:hover {
+    box-shadow: 0 0 30px rgba(63,185,80,0.25);
+    transform: scale(1.03);
   }
 
   .qr-terminal img {
-    width: 148px;
-    height: 148px;
+    width: 148px; height: 148px;
     display: block;
     object-fit: contain;
   }
@@ -463,13 +541,38 @@
     letter-spacing: 1px;
   }
 
+  /* Scanline overlay — subtle CRT effect */
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 999;
+  }
 </style>
 </head>
 <body>
 
-<div class="window">
+<!-- Subtle scanline overlay -->
+<div class="scanlines"></div>
 
-  <!-- IDE Title Bar -->
+<!-- Matrix rain canvas -->
+<canvas id="matrix-canvas"></canvas>
+
+<!-- Boot screen -->
+<div id="boot-screen">
+  <div class="boot-terminal" id="boot-terminal"></div>
+</div>
+
+<!-- Main card -->
+<div class="window" id="main-window">
+
   <div class="titlebar">
     <div class="dots">
       <div class="dot dot-red"></div>
@@ -477,19 +580,12 @@
       <div class="dot dot-green"></div>
     </div>
     <div class="tab-bar">
-      <div class="tab active">
-        <span class="lang-dot" style="background:#3fb950"></span>birthday_party.rs
-      </div>
-      <div class="tab">
-        <span class="lang-dot" style="background:#58a6ff"></span>wishlist.md
-      </div>
-      <div class="tab">
-        <span class="lang-dot" style="background:#ff8c42"></span>README
-      </div>
+      <div class="tab active"><span class="lang-dot" style="background:#3fb950"></span>birthday_party.rs</div>
+      <div class="tab"><span class="lang-dot" style="background:#58a6ff"></span>wishlist.md</div>
+      <div class="tab"><span class="lang-dot" style="background:#ff8c42"></span>README</div>
     </div>
   </div>
 
-  <!-- File header as source code -->
   <div class="file-header">
     <div class="code-block">
       <div class="ln">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8</div>
@@ -501,12 +597,12 @@
         <div class="line">&nbsp;</div>
         <div class="line"><span class="kw">use</span> <span class="cls">Waldhaus</span><span class="op">::</span><span class="fn">Reitnau</span><span class="op">;</span></div>
         <div class="line"><span class="kw">use</span> <span class="cls">Food</span><span class="op">::{</span><span class="fn">Speis, Trank, MehrTrank</span><span class="op">};</span></div>
-        <div class="line"><span class="kw">use</span> <span class="cls">Guests</span><span class="op">::*;  </span><span class="cm">// alle willkommen</span></div>
+        <div class="line"><span class="kw">use</span> <span class="cls">Guests</span><span class="op">::*;  </span><span class="cm">// du, anhang & nachkommen</span></div>
       </div>
     </div>
 
     <div class="big-title">
-      <span class="dim-title">fn </span>geburtstagsfest<span class="dim-title">() // Dani wird 33 🎉</span>
+      <span class="dim-title">fn </span><span id="typed-title"></span>
     </div>
 
     <div class="code-block" style="margin-top:12px">
@@ -521,7 +617,6 @@
     </div>
   </div>
 
-  <!-- Status Bar -->
   <div class="statusbar">
     <span>⎇ main</span>
     <span>✓ birthday_party.rs</span>
@@ -530,100 +625,57 @@
     <span style="margin-left:auto">Dani · v33.0.0 · stable · 0 errors · 0 warnings</span>
   </div>
 
-  <!-- Main two-panel area -->
   <div class="main-panels">
-
-    <!-- Sidebar: event details -->
     <div class="sidebar">
       <div class="sidebar-section">
         <div class="sidebar-title">Explorer</div>
       </div>
-
       <div class="sidebar-section">
         <div class="sidebar-title">📅 Event</div>
         <div class="sidebar-item">
           <span class="icon">📅</span>
-          <div>
-            <span class="key">datum</span>
-            <span class="val">28. März</span>
-            <span class="note">// Samstag</span>
-          </div>
+          <div><span class="key">datum</span><span class="val">28. März</span><span class="note">// Samstag</span></div>
         </div>
         <div class="sidebar-item">
           <span class="icon">🕒</span>
-          <div>
-            <span class="key">start_time</span>
-            <span class="val">15:00 Uhr</span>
-            <span class="note">// end_time = undefined</span>
-          </div>
+          <div><span class="key">start_time</span><span class="val">15:00 Uhr</span><span class="note">// end_time = undefined</span></div>
         </div>
         <div class="sidebar-item">
           <span class="icon">📍</span>
-          <div>
-            <span class="key">location</span>
-            <span class="val">Waldhaus Reitnau</span>
-            <span class="note">// 5057 Reitnau</span>
-          </div>
+          <div><span class="key">location</span><span class="val">Waldhaus Reitnau</span><span class="note">// 5057 Reitnau</span></div>
         </div>
         <div class="sidebar-item">
           <span class="icon">👨‍👩‍👧</span>
-          <div>
-            <span class="key">guests</span>
-            <span class="val">Du, Anhang</span>
-            <span class="val">& Nachkommen</span>
-            <span class="note">// partner++ && kinder[]</span>
-          </div>
+          <div><span class="key">guests</span><span class="val">Du, Anhang</span><span class="val">& Nachkommen</span><span class="note">// partner++ && kinder[]</span></div>
         </div>
       </div>
-
       <div class="sidebar-section">
         <div class="sidebar-title">⚙️ Dress Code</div>
         <div class="sidebar-item">
           <span class="icon">👕</span>
-          <div>
-            <span class="key">required</span>
-            <span class="val">casual</span>
-            <span class="note">// kein Smoking</span>
-          </div>
+          <div><span class="key">required</span><span class="val">casual</span><span class="note">// kein Smoking</span></div>
         </div>
       </div>
-
       <div class="sidebar-section">
         <div class="sidebar-title">📋 Changelog</div>
         <div class="sidebar-item">
           <span class="icon">🆕</span>
-          <div>
-            <span class="key">v33.0.0</span>
-            <span class="val">Major release</span>
-            <span class="note">// breaking: +1 Lebensjahr</span>
-          </div>
+          <div><span class="key">v33.0.0</span><span class="val">Major release</span><span class="note">// breaking: +1 Lebensjahr</span></div>
         </div>
         <div class="sidebar-item">
           <span class="icon">✅</span>
-          <div>
-            <span class="key">fixed</span>
-            <span class="val">Whisky-Regal</span>
-            <span class="note">// deprecated: Platz</span>
-          </div>
+          <div><span class="key">fixed</span><span class="val">Whisky-Regal</span><span class="note">// deprecated: Platz</span></div>
         </div>
         <div class="sidebar-item">
           <span class="icon">⭐</span>
-          <div>
-            <span class="key">added</span>
-            <span class="val">Piratenschiff</span>
-            <span class="note">// see wishlist.md</span>
-          </div>
+          <div><span class="key">added</span><span class="val">Piratenschiff</span><span class="note">// see wishlist.md</span></div>
         </div>
       </div>
     </div>
 
-    <!-- Editor: main content -->
     <div class="editor">
-
-      <!-- Food section -->
       <div class="editor-region">
         <div class="region-label">verpflegung.init()</div>
-
         <div class="screenshot-frame">
           <div class="screenshot-bar">
             <div class="sdot" style="background:#ff5f57"></div>
@@ -635,7 +687,6 @@
             <img src="images/BB.png" alt="Essen & Trinken">
           </div>
         </div>
-
         <div class="output-line">
           <span class="prompt">›</span>
           <span class="output-text">catering.serve(<span class="tag-green">"speis"</span>, <span class="tag-green">"trank"</span>, <span class="tag-green">"alkohol"</span>)  <span style="color:var(--comment)">// ✓ ready</span></span>
@@ -646,10 +697,8 @@
         </div>
       </div>
 
-      <!-- Wishlist as issue tracker -->
       <div class="editor-region">
         <div class="region-label">wishlist.md — issues</div>
-
         <div class="screenshot-frame">
           <div class="screenshot-bar">
             <div class="sdot" style="background:#ff5f57"></div>
@@ -661,7 +710,6 @@
             <img src="images/Q-A-R.png" alt="Queen Anne's Revenge">
           </div>
         </div>
-
         <div class="issue-block">
           <div class="issue-title">
             <span>#1</span>
@@ -676,25 +724,22 @@
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- Terminal footer -->
-  <div class="terminal-footer">
+  <div class="terminal-footer" id="terminal-footer">
     <div class="terminal-panel">
       <div class="terminal-header">
         <span class="active">TERMINAL</span>
         <span>OUTPUT</span>
         <span>DEBUG</span>
       </div>
-      <span class="t-line"><span class="p">$</span> cargo run --release birthday_party</span>
-      <span class="t-line"><span class="p"> </span><span class="info">Compiling</span> <span class="strong">happiness</span> v33.0.0 <span style="color:var(--comment)">// hosted by Dani</span></span>
-      <span class="t-line"><span class="p"> </span><span class="warn">⚠ WARNING</span> <span style="color:var(--text-dim)">children_mode=<span class="warn">true</span> — noise_level überschreitet INT_MAX. Ohropax optional.</span></span>
-      <span class="t-line"><span class="p"> </span><span class="success">✓ Finished</span> — <span class="strong">Ich freu mich riesig auf euch!</span></span>
-      <span class="t-line"><span class="p"> </span><span class="warn">⚠</span> <span class="strong">Bis zum 28. März!</span> Kein Smoking nötig. 🥂<span class="cursor"></span></span>
+      <span class="t-line" id="tl1"><span class="p">$</span> cargo run --release birthday_party</span>
+      <span class="t-line" id="tl2"><span class="p"> </span><span class="info">Compiling</span> <span class="strong">happiness</span> v33.0.0 <span style="color:var(--comment)">// hosted by Dani</span></span>
+      <span class="t-line" id="tl3"><span class="p"> </span><span class="warn">⚠ WARNING</span> <span style="color:var(--text-dim)">children_mode=<span class="warn">true</span> — noise_level überschreitet INT_MAX. Ohropax optional.</span></span>
+      <span class="t-line" id="tl4"><span class="p"> </span><span class="success">✓ Finished</span> — <span class="strong">Ich freu mich riesig auf euch!</span></span>
+      <span class="t-line" id="tl5"><span class="p"> </span><span class="warn">⚠</span> <span class="strong">Bis zum 28. März!</span> Kein Smoking nötig. 🥂<span class="cursor"></span></span>
     </div>
-
     <div class="qr-panel">
       <div class="qr-terminal">
         <img src="images/QR.png" alt="QR Code Google Maps">
@@ -704,6 +749,181 @@
   </div>
 
 </div>
+
+<script>
+/* =============================================
+   1. MATRIX RAIN
+============================================= */
+const canvas = document.getElementById('matrix-canvas');
+const ctx = canvas.getContext('2d');
+const chars = 'ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEF{}[]()<>';
+let drops = [];
+const fontSize = 13;
+
+function initMatrix() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const cols = Math.floor(canvas.width / fontSize);
+  drops = Array(cols).fill(1);
+}
+
+function drawMatrix() {
+  ctx.fillStyle = 'rgba(1,4,9,0.05)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.font = fontSize + 'px JetBrains Mono, monospace';
+
+  for (let i = 0; i < drops.length; i++) {
+    const char = chars[Math.floor(Math.random() * chars.length)];
+    const brightness = Math.random();
+    if (brightness > 0.97) {
+      ctx.fillStyle = '#ffffff';
+    } else if (brightness > 0.85) {
+      ctx.fillStyle = '#3fb950';
+    } else {
+      ctx.fillStyle = 'rgba(63,185,80,0.25)';
+    }
+    ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}
+
+initMatrix();
+window.addEventListener('resize', initMatrix);
+let matrixInterval = null;
+
+/* =============================================
+   2. BOOT SEQUENCE
+============================================= */
+const bootLines = [
+  { text: 'BIOS v2.33.0 — Initializing hardware...', cls: 'dim', delay: 0 },
+  { text: 'CPU: Cortex-Party-9000 @ 33.0 GHz  ✓', cls: 'dim', delay: 180 },
+  { text: 'RAM: 33 GB happiness loaded           ✓', cls: 'dim', delay: 320 },
+  { text: '', cls: 'dim', delay: 460 },
+  { text: 'Loading birthday_party.rs...', cls: '', delay: 560 },
+  { text: '  [██████████████████████████] 100%', cls: 'blue', delay: 800 },
+  { text: '', cls: 'dim', delay: 960 },
+  { text: '  Compiling dependencies...', cls: 'dim', delay: 1050 },
+  { text: '  ✓ good_vibes     v1.0.0', cls: 'dim', delay: 1150 },
+  { text: '  ✓ waldhaus_reitnau v33.0', cls: 'dim', delay: 1230 },
+  { text: '  ✓ catering        v∞.0.0', cls: 'dim', delay: 1310 },
+  { text: '', cls: 'dim', delay: 1400 },
+  { text: '  ✓ Build successful — 0 errors, 0 warnings', cls: '', delay: 1500 },
+  { text: '', cls: 'dim', delay: 1620 },
+  { text: '  Launching geburtstagsfest()...', cls: 'yellow', delay: 1720 },
+];
+
+function runBoot() {
+  const container = document.getElementById('boot-terminal');
+
+  // Start matrix during boot
+  matrixInterval = setInterval(drawMatrix, 50);
+  canvas.classList.add('visible');
+
+  bootLines.forEach(({ text, cls, delay }) => {
+    setTimeout(() => {
+      const span = document.createElement('span');
+      span.className = 'boot-line ' + cls;
+      span.textContent = text || '\u00a0';
+      container.appendChild(span);
+      // Fade in
+      requestAnimationFrame(() => {
+        span.style.opacity = '1';
+        span.style.transition = 'opacity 0.2s ease';
+      });
+    }, delay);
+  });
+
+  // After boot: fade out boot screen, reveal card
+  setTimeout(() => {
+    // Fade out matrix
+    canvas.style.transition = 'opacity 1.5s ease';
+    canvas.style.opacity = '0.08';
+    clearInterval(matrixInterval);
+    // Restart matrix very slowly in background
+    matrixInterval = setInterval(drawMatrix, 120);
+
+    const bootScreen = document.getElementById('boot-screen');
+    bootScreen.classList.add('fade-out');
+
+    setTimeout(() => {
+      bootScreen.style.display = 'none';
+
+      // Show card
+      const win = document.getElementById('main-window');
+      win.classList.add('visible');
+
+      // Stagger sidebar items
+      setTimeout(() => revealSidebarItems(), 300);
+      // Stagger editor regions
+      setTimeout(() => revealEditorRegions(), 500);
+      // Typing effect on title
+      setTimeout(() => typeTitle(), 200);
+      // Terminal lines
+      setTimeout(() => revealTerminalLines(), 900);
+    }, 700);
+  }, 2200);
+}
+
+/* =============================================
+   3. TYPING EFFECT — big title
+============================================= */
+function typeTitle() {
+  const el = document.getElementById('typed-title');
+  const fullText = 'geburtstagsfest() // Dani wird 33 🎉';
+  const dimPart  = '() // Dani wird 33 🎉';
+  const greenPart = 'geburtstagsfest';
+  let i = 0;
+
+  const interval = setInterval(() => {
+    i++;
+    const current = fullText.slice(0, i);
+    const greenSlice = current.slice(0, Math.min(i, greenPart.length));
+    const dimSlice   = i > greenPart.length ? current.slice(greenPart.length) : '';
+    el.innerHTML = greenSlice +
+      (dimSlice ? `<span style="color:var(--comment);font-weight:300">${dimSlice}</span>` : '');
+
+    if (i >= fullText.length) {
+      clearInterval(interval);
+      el.classList.add('done');
+    }
+  }, 38);
+}
+
+/* =============================================
+   4. STAGGERED REVEALS
+============================================= */
+function revealSidebarItems() {
+  const items = document.querySelectorAll('.sidebar-item');
+  items.forEach((item, i) => {
+    setTimeout(() => item.classList.add('revealed'), i * 60);
+  });
+}
+
+function revealEditorRegions() {
+  const regions = document.querySelectorAll('.editor-region');
+  regions.forEach((region, i) => {
+    setTimeout(() => region.classList.add('revealed'), i * 180);
+  });
+  setTimeout(() => {
+    document.getElementById('terminal-footer').classList.add('revealed');
+  }, regions.length * 180 + 100);
+}
+
+function revealTerminalLines() {
+  ['tl1','tl2','tl3','tl4','tl5'].forEach((id, i) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('revealed');
+    }, i * 200);
+  });
+}
+
+/* =============================================
+   START
+============================================= */
+window.addEventListener('load', runBoot);
+</script>
 
 </body>
 </html>
